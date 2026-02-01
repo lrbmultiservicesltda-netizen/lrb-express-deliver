@@ -649,9 +649,23 @@
                     </div>
                     <div class="space-y-2 mb-4">
                         <p><span class="font-semibold">Cliente:</span> ${delivery.customer_name}</p>
-                        <p><span class="font-semibold">Telefone:</span> ${delivery.customer_phone}</p>
+                        <p><span class="font-semibold">Telefone:</span> <a href="tel:${delivery.customer_phone}" class="text-blue-600 hover:underline">${delivery.customer_phone}</a></p>
                         <p><span class="font-semibold">Endereço:</span> ${delivery.customer_address}</p>
                     </div>
+                    
+                    <!-- Botões de Navegação -->
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="openInGoogleMaps('${delivery.customer_address.replace(/'/g, "\\'")}')" 
+                                class="bg-white border-2 border-blue-500 text-blue-600 px-4 py-2 rounded hover:bg-blue-50 flex items-center justify-center">
+                            <i class="fas fa-map-marked-alt mr-2"></i>Google Maps
+                        </button>
+                        <button onclick="openInWaze('${delivery.customer_address.replace(/'/g, "\\'")}')" 
+                                class="bg-white border-2 border-cyan-500 text-cyan-600 px-4 py-2 rounded hover:bg-cyan-50 flex items-center justify-center">
+                            <i class="fas fa-route mr-2"></i>Waze
+                        </button>
+                    </div>
+                    
+                    <!-- Botões de Status -->
                     <div class="flex gap-2">
                         ${delivery.status === 'pendente' ? `
                             <button onclick="updateDeliveryStatus('${delivery.id}', '${delivery.tracking_code}', 'em-rota')" 
@@ -715,6 +729,39 @@
                 alert('Erro ao atualizar status');
             } finally {
                 showLoading(false);
+            }
+        }
+
+        // Funções de Navegação
+        function openInGoogleMaps(address) {
+            // Codificar o endereço para URL
+            const encodedAddress = encodeURIComponent(address);
+            
+            // Detectar se é mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // No mobile, tenta abrir o app do Google Maps
+                window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+            } else {
+                // No desktop, abre em nova aba
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`, '_blank');
+            }
+        }
+
+        function openInWaze(address) {
+            // Codificar o endereço para URL
+            const encodedAddress = encodeURIComponent(address);
+            
+            // Detectar se é mobile
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // No mobile, tenta abrir o app do Waze
+                window.location.href = `https://waze.com/ul?q=${encodedAddress}&navigate=yes`;
+            } else {
+                // No desktop, abre em nova aba
+                window.open(`https://waze.com/ul?q=${encodedAddress}`, '_blank');
             }
         }
     </script>
