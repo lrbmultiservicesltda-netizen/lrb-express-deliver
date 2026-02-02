@@ -218,6 +218,91 @@
         </div>
     </section>
 
+    <!-- Modal de Confirmação de Entrega -->
+    <div id="deliveryConfirmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        Confirmar Entrega
+                    </h3>
+                    <button onclick="closeDeliveryModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+
+                <form id="deliveryConfirmForm" onsubmit="confirmDelivery(event)">
+                    <input type="hidden" id="modalDeliveryId">
+                    <input type="hidden" id="modalTrackingCode">
+
+                    <!-- Nome do Recebedor -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">
+                            Quem recebeu? <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="receiverName" required
+                               placeholder="Nome completo"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+
+                    <!-- Relação com Destinatário -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">
+                            Relação com destinatário <span class="text-red-500">*</span>
+                        </label>
+                        <select id="receiverRelation" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="">Selecione...</option>
+                            <option value="titular">Titular (próprio cliente)</option>
+                            <option value="filho">Filho(a)</option>
+                            <option value="esposo">Esposo(a)</option>
+                            <option value="pai-mae">Pai/Mãe</option>
+                            <option value="irmao">Irmão/Irmã</option>
+                            <option value="vizinho">Vizinho</option>
+                            <option value="porteiro">Porteiro/Zelador</option>
+                            <option value="funcionario">Funcionário/Recepcionista</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <!-- Documento -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-semibold mb-2">
+                            Documento (RG ou CPF) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="receiverDocument" required
+                               placeholder="000.000.000-00 ou 00.000.000-0"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Digite apenas números</p>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-semibold mb-2">
+                            Observações (opcional)
+                        </label>
+                        <textarea id="deliveryNotes" rows="3"
+                                  placeholder="Ex: Porteiro do prédio, Recebeu no trabalho..."
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"></textarea>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeDeliveryModal()"
+                                class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit"
+                                class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold">
+                            <i class="fas fa-check mr-2"></i>Confirmar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase JS -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
     
@@ -679,7 +764,7 @@
                                 <i class="fas fa-truck mr-2"></i>Iniciar Entrega
                             </button>
                         ` : `
-                            <button onclick="updateDeliveryStatus('${delivery.id}', '${delivery.tracking_code}', 'entregue')" 
+                            <button onclick="openDeliveryModal('${delivery.id}', '${delivery.tracking_code}')" 
                                     class="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                                 <i class="fas fa-check mr-2"></i>Confirmar Entrega
                             </button>
@@ -768,6 +853,123 @@
             } else {
                 // No desktop, abre em nova aba
                 window.open(`https://waze.com/ul?q=${encodedAddress}`, '_blank');
+            }
+        }
+
+        // Funções do Modal de Confirmação de Entrega
+        function openDeliveryModal(deliveryId, trackingCode) {
+            document.getElementById('modalDeliveryId').value = deliveryId;
+            document.getElementById('modalTrackingCode').value = trackingCode;
+            document.getElementById('deliveryConfirmModal').classList.remove('hidden');
+            
+            // Limpar formulário
+            document.getElementById('deliveryConfirmForm').reset();
+            document.getElementById('modalDeliveryId').value = deliveryId;
+            document.getElementById('modalTrackingCode').value = trackingCode;
+        }
+
+        function closeDeliveryModal() {
+            document.getElementById('deliveryConfirmModal').classList.add('hidden');
+            document.getElementById('deliveryConfirmForm').reset();
+        }
+
+        // Máscara para documento (CPF ou RG)
+        document.addEventListener('DOMContentLoaded', function() {
+            const docInput = document.getElementById('receiverDocument');
+            if (docInput) {
+                docInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    if (value.length <= 11) {
+                        // Formatar como CPF: 000.000.000-00
+                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    } else {
+                        // Limitar a 11 dígitos (CPF)
+                        value = value.substring(0, 11);
+                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    }
+                    
+                    e.target.value = value;
+                });
+            }
+        });
+
+        // Confirmar entrega com dados do recebedor
+        async function confirmDelivery(event) {
+            event.preventDefault();
+            showLoading(true);
+
+            try {
+                const deliveryId = document.getElementById('modalDeliveryId').value;
+                const trackingCode = document.getElementById('modalTrackingCode').value;
+                const receiverName = document.getElementById('receiverName').value;
+                const receiverRelation = document.getElementById('receiverRelation').value;
+                const receiverDocument = document.getElementById('receiverDocument').value;
+                const deliveryNotes = document.getElementById('deliveryNotes').value;
+
+                // Validar campos obrigatórios
+                if (!receiverName || !receiverRelation || !receiverDocument) {
+                    alert('Por favor, preencha todos os campos obrigatórios');
+                    showLoading(false);
+                    return;
+                }
+
+                // Atualizar status da entrega
+                const { error: updateError } = await supabaseClient
+                    .from('deliveries')
+                    .update({ 
+                        status: 'entregue',
+                        received_by: receiverName,
+                        receiver_relation: receiverRelation,
+                        receiver_document: receiverDocument,
+                        delivery_notes: deliveryNotes,
+                        delivered_at: new Date().toISOString()
+                    })
+                    .eq('id', deliveryId);
+
+                if (updateError) throw updateError;
+
+                // Mapear relação para texto amigável
+                const relationMap = {
+                    'titular': 'Titular (próprio cliente)',
+                    'filho': 'Filho(a)',
+                    'esposo': 'Esposo(a)',
+                    'pai-mae': 'Pai/Mãe',
+                    'irmao': 'Irmão/Irmã',
+                    'vizinho': 'Vizinho',
+                    'porteiro': 'Porteiro/Zelador',
+                    'funcionario': 'Funcionário/Recepcionista',
+                    'outros': 'Outros'
+                };
+
+                const relationText = relationMap[receiverRelation] || receiverRelation;
+
+                // Adicionar ao histórico
+                await supabaseClient
+                    .from('delivery_updates')
+                    .insert([{
+                        delivery_id: deliveryId,
+                        status: 'entregue',
+                        description: `Entregue para: ${receiverName} (${relationText})`,
+                        created_by: currentUser.id
+                    }]);
+
+                alert(`✅ Entrega confirmada!\n\nRecebido por: ${receiverName}\nRelação: ${relationText}`);
+
+                // Fechar modal
+                closeDeliveryModal();
+
+                // Recarregar lista
+                await loadDriverDeliveries();
+            } catch (error) {
+                console.error('Erro ao confirmar entrega:', error);
+                alert('Erro ao confirmar entrega: ' + error.message);
+            } finally {
+                showLoading(false);
             }
         }
     </script>
