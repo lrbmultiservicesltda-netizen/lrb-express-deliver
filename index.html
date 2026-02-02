@@ -473,11 +473,15 @@
         // Admin - Carregar entregadores
         async function loadDrivers() {
             try {
-                const { data: drivers } = await supabaseClient
-                    .from('profiles')
+                const { data: drivers, error } = await supabaseClient
+                    .from('user_profiles')
                     .select('*')
-                    .eq('role', 'entregador')
-                    .eq('is_active', true);
+                    .eq('role', 'driver');
+
+                if (error) {
+                    console.error('Erro ao buscar entregadores:', error);
+                    return;
+                }
 
                 const select = document.getElementById('deliveryDriver');
                 select.innerHTML = '<option value="">Selecione...</option>';
@@ -485,9 +489,11 @@
                 drivers?.forEach(driver => {
                     const option = document.createElement('option');
                     option.value = driver.id;
-                    option.textContent = driver.nome;
+                    option.textContent = driver.full_name;
                     select.appendChild(option);
                 });
+                
+                console.log('✅ Entregadores carregados:', drivers);
             } catch (error) {
                 console.error('Erro ao carregar entregadores:', error);
             }
